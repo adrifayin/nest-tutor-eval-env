@@ -1,0 +1,127 @@
+name: nest-tutor-eval-env
+version: "1.0.0"
+description: >
+  An OpenEnv environment for training and benchmarking AI agents to evaluate
+  the quality of AI-generated tutor responses. Built on the NEST.ai EdTech
+  platform domain, where an AI Co-Tutor generates responses to student
+  questions. Agents evaluate responses across three dimensions of increasing
+  difficulty: factual accuracy, pedagogical quality, and personalisation to
+  the student's profile and skill level.
+author: Adhil Rifayin K S
+tags:
+  - education
+  - tutoring
+  - quality-evaluation
+  - edtech
+  - nlp
+  - openenv
+  - nest-ai
+
+tasks:
+  - name: factual_accuracy
+    difficulty: easy
+    description: >
+      Evaluate a tutor response that contains a clear factual error.
+      The agent must identify the error and score rubric items accordingly.
+      Success requires detecting that len() does not exclusively work on strings.
+    max_steps: 5
+
+  - name: pedagogical_quality
+    difficulty: medium
+    description: >
+      Evaluate a factually correct but pedagogically weak tutor response
+      about recursion. The agent must distinguish correct content from
+      effective teaching — the response ignores the student's learning style,
+      provides no example, and misses the root cause (missing base case).
+    max_steps: 5
+
+  - name: personalisation_review
+    difficulty: hard
+    description: >
+      Evaluate a factually correct and clear tutor response about attention
+      mechanisms that is entirely inappropriate for an advanced ML student.
+      The agent must detect depth mismatch — a beginner analogy delivered
+      to an advanced learner expecting Q/K/V technical depth.
+    max_steps: 5
+
+observation_space:
+  type: object
+  properties:
+    session:
+      type: object
+      description: "The tutoring session: student profile, question, tutor response, and learning objective"
+      properties:
+        student_question:
+          type: string
+        ai_tutor_response:
+          type: string
+        expected_learning_objective:
+          type: string
+        student_profile:
+          type: object
+          properties:
+            level:
+              type: string
+              enum: [beginner, intermediate, advanced]
+            subject:
+              type: string
+            recent_mistakes:
+              type: array
+              items:
+                type: string
+            learning_style:
+              type: string
+              enum: [visual, text-heavy, example-first]
+    evaluation_rubric:
+      type: array
+      items:
+        type: string
+      description: "List of rubric criterion names the agent must score"
+    rubric_descriptions:
+      type: object
+      description: "Human-readable description of each rubric criterion"
+    review_history:
+      type: array
+      items:
+        type: string
+      description: "Summaries of previous evaluation attempts this episode"
+    step_number:
+      type: integer
+      description: "Current step index within the episode"
+    task_name:
+      type: string
+      description: "Name of the active task"
+
+action_space:
+  type: object
+  required:
+    - rubric_scores
+    - overall_quality
+  properties:
+    rubric_scores:
+      type: object
+      description: "Score for each rubric criterion (0.0 = very poor, 1.0 = excellent)"
+      additionalProperties:
+        type: number
+        minimum: 0.0
+        maximum: 1.0
+    overall_quality:
+      type: number
+      minimum: 0.0
+      maximum: 1.0
+      description: "Holistic quality score for the entire tutor response"
+    improvement_suggestion:
+      type: string
+      nullable: true
+      description: "Specific actionable suggestion to improve the tutor response"
+    flag_for_human_review:
+      type: boolean
+      description: "Flag if response is dangerous or fundamentally broken (use sparingly)"
+
+reward_range: [0.0, 1.0]
+episode_max_steps: 5
+
+endpoints:
+  reset: POST /reset
+  step:  POST /step
+  state: GET  /state
