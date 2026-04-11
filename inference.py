@@ -222,6 +222,14 @@ async def run_task(task_name: str, client: OpenAI) -> None:
                     break
 
                 action = get_evaluation(client, obs, history)
+                if not isinstance(action, dict):
+                    rubric = obs.get("evaluation_rubric", []) or []
+                    action = {
+                        "rubric_scores": {item: 0.5 for item in rubric},
+                        "overall_quality": 0.5,
+                        "improvement_suggestion": None,
+                        "flag_for_human_review": False,
+                    }
 
                 step_resp = await http.post(
                     f"{ENV_URL}/step",
